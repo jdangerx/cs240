@@ -6,6 +6,9 @@ import Control.Concurrent
 import Control.Exception
 import Control.Monad
 import Data.Typeable
+import System.IO
+
+import Network.Socket
 
 -- exceptions
 
@@ -187,7 +190,28 @@ writeChan' (Chan' _ w) a =
     -- old tail box now points to a box that holds the new value and
     -- points at new tail box
 
+readChan' :: Chan' a -> IO a
+readChan' (Chan' r _) =
+  modifyMVar r $ \h -> do
+    (Item a newHead) <- takeMVar h
+    return (newHead, a)
+    --    new `r`^   ^ return value of `modifyMVar`
 
-main :: IO ()
-main = return ()
+-- network
+
+data RPS = Rock | Paper | Scissors deriving (Show, Eq)
+
+instance Ord RPS where
+  Rock <= Scissors = False
+  Paper <= Rock = False
+  Scissors <= Paper = False
+  _ <= _ = True
+
+data Result = Win | Lose | Tie deriving (Show)
+
+vs :: RPS -> RPS -> Result
+vs us them = case compare us them of
+              LT -> Lose
+              GT -> Win
+              EQ -> Tie
 
